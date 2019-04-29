@@ -5,16 +5,27 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-/* a=target variable, b=bit number to act upon 0-n */
-#define BIT_SET(a,b) ((a) |= (1ULL<<(b)))
-#define BIT_CLEAR(a,b) ((a) &= ~(1ULL<<(b)))
-#define BIT_FLIP(a,b) ((a) ^= (1ULL<<(b)))
-#define BIT_CHECK(a,b) (!!((a) & (1ULL<<(b)))) // '!!' to make sure this returns 0 or 1
+#define A 0
+#define B 1
+#define C 2
+#define D 3
+#define E 4
+#define F 5
+#define H 6
+#define L 7
 
-#define Z 7
-#define N 6
-#define H 5
-#define C 4
+#define BC (vm->r[B] << 8) | vm->r[C]
+#define DE (vm->r[D] << 8) | vm->r[E]
+#define HL ((vm->r[H] << 8) | vm->r[L])
+
+#define FZ (1 << 7)
+#define FN (1 << 6)
+#define FH (1 << 5)
+#define FC (1 << 4)
+
+#define FLAG_SET(x) (vm->r[F] |= (x))
+#define FLAG_CLEAR(x) (vm->r[F] &= ~(x))
+#define FLAG_CHECK(x) (vm->r[F] & (x))
 
 static const uint8_t BOOT_ROM[] = { 
 	0x31, 0xfe, 0xff, 0xaf, 0x21, 0xff, 0x9f, 0x32, 0xcb, 0x7c, 0x20, 0xfb, 0x21, 0x26, 0xff, 0x0e,
@@ -35,22 +46,13 @@ static const uint8_t BOOT_ROM[] = {
 	0xf5, 0x06, 0x19, 0x78, 0x86, 0x23, 0x05, 0x20, 0xfb, 0x86, 0x20, 0xfe, 0x3e, 0x01, 0xe0, 0x50
 };
 
-typedef struct Cpu {
-  uint8_t a;
-  uint8_t f;
-  uint8_t b;
-  uint8_t c;
-  uint8_t d;
-  uint8_t e;
-  uint8_t h;
-  uint8_t l;
+typedef struct Vm {
+  uint8_t r[8];
   uint16_t sp;
   uint16_t pc;
-} Cpu;
-
-typedef struct Vm {
-  struct Cpu *cpu;
   uint8_t *memory;
 } Vm;
+
+static struct Vm *vm = NULL;
 
 #endif
