@@ -14,6 +14,10 @@
 #define H 6
 #define L 7
 
+#define BC 0
+#define DE 1
+#define HL 2
+
 #define BC (vm->r[B] << 8) | vm->r[C]
 #define DE (vm->r[D] << 8) | vm->r[E]
 #define HL ((vm->r[H] << 8) | vm->r[L])
@@ -25,7 +29,7 @@
 
 #define FLAG_SET(x) (vm->r[F] |= (x))
 #define FLAG_CLEAR(x) (vm->r[F] &= ~(x))
-#define FLAG_CHECK(x) (vm->r[F] & (x))
+#define FLAG_CHECK(x) ((vm->r[F] & (x)) == 0u ? 0u : 1u)
 
 static const uint8_t BOOT_ROM[] = { 
 	0x31, 0xfe, 0xff, 0xaf, 0x21, 0xff, 0x9f, 0x32, 0xcb, 0x7c, 0x20, 0xfb, 0x21, 0x26, 0xff, 0x0e,
@@ -53,6 +57,9 @@ typedef struct Vm {
   uint8_t *memory;
 } Vm;
 
-static struct Vm *vm = NULL;
+extern struct Vm *vm;
+
+int emulate();
+void init_vm();
 
 #endif
