@@ -28,6 +28,30 @@ void reset_vm() {
   memset(vm->memory, 0, 0xFFFF);
 }
 
+void ld16(uint8_t r1, uint8_t r2) {
+  
+}
+
+int test_in16c() {
+  printf("\nTesting 16-bit increment instructions\n");
+  uint8_t opcodes[]   = { 0x03, 0x13, 0x23, 0x33 };
+  uint8_t registers[] = { B,C,  D,E,  H,L };
+  int length = sizeof(opcodes) / sizeof(opcodes[0]);
+
+  for (int i = 0; i < length; i++) {
+    printf("0x%02x", opcodes[i]);
+    reset_vm();
+
+    vm->memory[0] = opcodes[i];
+    vm->r[registers[i + 1]] = 1;
+    emulate();
+
+    assert(2, vm->r[registers[i]]);
+  }
+
+  return 0;
+}
+
 int test_inc() {
   printf("\nTesting 8-bit increment instructions\n");
   uint8_t opcodes[]   = { 0x3c, 0x04, 0x0c, 0x14, 0x1c, 0x24, 0x2c };
@@ -74,10 +98,40 @@ int test_flags() {
   return 0;
 }
 
+void load_memory(uint8_t *instructions) {
+  int length = sizeof(instructions) / sizeof(instructions[0]);
+  for (int i = 0; i < length; i++) {
+    vm->memory[i] = instructions[i];
+  }
+}
+
 int main(int argc, char *argv[]) {
   int success = 0;
   init_vm();
   test_inc();
   test_dec();
+
+  printf("\n");
+  reset_vm();
+  
+  uint8_t instr[] = { 0x26, 0x19, 0x2e, 0x81, 0x36, 37, 0x76 };
+  
+  load_memory(instr);
+  int running = 1;
+  while(running) {
+    running = emulate();
+  }
+  printf("%d\n", vm->memory[0x1981]);
+  assert(37, vm->memory[0x1981]);
+  
+  reset_vm();
+  vm->r[A] = 4;
+  vm->memory[0] = 0x2f;
+  vm->memory[1] = 0x76;
+  running = 1;
+  while(running) {
+	  running = emulate();
+  }
+  print_registers();
   return 0;
 }
