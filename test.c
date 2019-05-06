@@ -98,6 +98,76 @@ int test_flags() {
   return 0;
 }
 
+int test_add() {
+	printf("\nTesting 8-bit add instructions\n");
+	uint8_t opcodes[]   = { 0x87, 0x80, 0x81, 0x82, 0x83, 0x84, 0x85 };
+	uint8_t registers[] = { A,    B,    C,    D,    E,    H,    L };
+	int length = sizeof(opcodes) / sizeof(opcodes[0]);
+	
+	for (int i = 0; i < length; i++) {
+		printf("0x%02x", opcodes[i]);
+		reset_vm();
+		
+		vm->memory[0] = opcodes[i];
+		vm->r[A] = 10;
+		vm->r[registers[i]] = 20;
+		uint8_t expected = vm->r[A] + vm->r[registers[i]];
+		emulate();
+		
+		assert(expected, vm->r[A]);
+	}
+	
+	return 0;
+}
+
+int test_add_overflow() {
+	printf("\nTesting 8-bit add overflow\n");
+	uint8_t opcodes[]   = { 0x87, 0x80, 0x81, 0x82, 0x83, 0x84, 0x85 };
+	uint8_t registers[] = { A,    B,    C,    D,    E,    H,    L };
+	int length = sizeof(opcodes) / sizeof(opcodes[0]);
+	
+	for (int i = 0; i < length; i++) {
+		printf("0x%02x", opcodes[i]);
+		reset_vm();
+		
+		vm->memory[0] = opcodes[i];
+		vm->r[A] = 255;
+		if (registers[i] != A) {
+			vm->r[registers[i]] = 10;
+		}
+		
+		uint8_t expected = vm->r[A] + vm->r[registers[i]];
+		emulate();
+		
+		assert(1, FLAG_CHECK(FC));
+		assert(expected, vm->r[A]);
+	}
+	
+	return 0;
+}
+
+int test_sub() {
+	printf("\nTesting 8-bit sub instructions\n");
+	uint8_t opcodes[]   = { 0x87, 0x80, 0x81, 0x82, 0x83, 0x84, 0x85 };
+	uint8_t registers[] = { A,    B,    C,    D,    E,    H,    L };
+	int length = sizeof(opcodes) / sizeof(opcodes[0]);
+	
+	for (int i = 0; i < length; i++) {
+		printf("0x%02x", opcodes[i]);
+		reset_vm();
+		
+		vm->memory[0] = opcodes[i];
+		vm->r[A] = 10;
+		vm->r[registers[i]] = 20;
+		uint8_t expected = vm->r[A] + vm->r[registers[i]];
+		emulate();
+		
+		assert(expected, vm->r[A]);
+	}
+	
+	return 0;
+}
+
 void load_memory(uint8_t *instructions) {
   int length = sizeof(instructions) / sizeof(instructions[0]);
   for (int i = 0; i < length; i++) {
@@ -110,7 +180,9 @@ int main(int argc, char *argv[]) {
   init_vm();
   test_inc();
   test_dec();
-
+  test_add();
+  test_add_overflow();
+  /*
   printf("\n");
   reset_vm();
   
@@ -133,5 +205,6 @@ int main(int argc, char *argv[]) {
 	  running = emulate();
   }
   print_registers();
+*/  
   return 0;
 }

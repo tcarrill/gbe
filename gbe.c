@@ -109,10 +109,61 @@ void dec(uint8_t r) {
 	(vm->r[r] == 0) ? FLAG_SET(FZ) : FLAG_CLEAR(FZ);
 	FLAG_SET(FN);
 }
+/*
+Flags affected:
+ Z - Set if result is zero.
+ N - Reset.
+ H - Set if carry from bit 3.
+ C - Set if carry from bit 7.
+*/
+void add(uint8_t value) {
+	unsigned int result = vm->r[A] + value; // do math at higher precision to detect overflows
+	result == 0 ? FLAG_SET(FZ) : FLAG_CLEAR(FZ);
+	(result & 0xFF00) ? FLAG_SET(FC) : FLAG_CLEAR(FC);
+	
+	vm->r[A] = result & 0xFF;
+
+	if (((vm->r[A] & 0x0F) + (value & 0x0F)) > 0x0F) FLAG_SET(FH);
+	else FLAG_CLEAR(FH);
+	FLAG_CLEAR(FN);
+}
+
+/*
+Flags affected:
+ Z - Set if result is zero.
+ N - Set.
+ H - Set if no borrow from bit 4.
+ C - Set if no borrow
+*/
+void sub(uint8_t value) {
+	value > vm->r[A] ? FLAG_SET(FC) : FLAG_CLEAR(FC);
+	 
+	if ((value & 0x0F) > (vm->r[A] & 0x0F)) FLAG_SET(FH);
+	else FLAG_CLEAR(FH);
+	
+	vm->r[A] -= value;
+	
+	vm->r[A] == 0 ? FLAG_SET(FZ) : FLAG_CLEAR(FZ);
+	FLAG_SET(FN);
+}
+
+/*
+Flags affected:
+ Z - Set if result is zero. (Set if A = n.)
+ N - Set.
+ H - Set if no borrow from bit 4.
+ C - Set for no borrow. (Set if A < n.)
+*/
+void cp(uint8_t value) {
+  	vm->r[A] == value ? FLAG_SET(FZ) : FLAG_CLEAR(FZ);
+  	vm->r[A] < value ? FLAG_SET(FC) : FLAG_CLEAR(FC);
+  	((value & 0x0F) > (vm->r[A] & 0x0F)) ? FLAG_SET(FH) : FLAG_CLEAR(FH);
+  	FLAG_SET(FN);
+}
 
 int emulate() {
 	uint8_t opcode = fetch();
-	int running = 1;
+	int cycles = 0;
   	switch (opcode) {
 	  case 0x00: break;
 	  case 0x01: 
@@ -124,7 +175,12 @@ int emulate() {
 	  case 0x04: inc(B); break;
 	  case 0x05: dec(B); break;
 	  case 0x06: vm->r[B] = fetch(); break;
-	  case 0x07: todo_implement(); break;
+	  case 0x07: 
+	  			(vm->r[A] << 1) ? FLAG_SET(FC) : FLAG_CLEAR(FC);
+	  		  	vm->r[A] = (FLAG_CHECK(FC) | FLAG_CHECK(FC) >> 8) & 0xFF;
+	  		  	FLAG_CLEAR(FN | FH);
+	  		  	vm->r[A] == 0 ? FLAG_SET(FZ) : FLAG_CLEAR(FZ);
+	  			break;
 	  case 0x08: 
 	  			{
 		  			uint16_t address = (fetch() << 8) | fetch();
@@ -217,7 +273,7 @@ int emulate() {
 	  case 0x2C: inc(L); break;
 	  case 0x2D: dec(L); break;
 	  case 0x2E: vm->r[L] = fetch(); break;
-	  case 0x2F: 
+	  case 0x2F:
 	  			vm->r[A] = ~vm->r[A];
 	  		  	FLAG_SET(FN | FH);
 	  		  	break;
@@ -225,7 +281,7 @@ int emulate() {
 	  case 0x31: 
 	  			{
 	  				uint8_t lb = fetch();
-	  		  		uint8_t hb = fetch();  
+	  		  		uint8_t hb = fetch();
 	  				vm->sp = (hb << 8) | lb;
 					break;
 				}
@@ -242,7 +298,7 @@ int emulate() {
 	  case 0x34: 
 	  			{
 					uint16_t address = (vm->r[H] << 8) | vm->r[L];
-					((vm->memory[address] & 0x0F) == 0x0F) ? FLAG_SET(FH) : FLAG_CLEAR(FH);		  		  	
+					((vm->memory[address] & 0x0F) == 0x0F) ? FLAG_SET(FH) : FLAG_CLEAR(FH);
 	  	  		  	vm->memory[address]++;
 					(vm->memory[address] == 0) ? FLAG_SET(FZ) : FLAG_CLEAR(FZ);
 					FLAG_CLEAR(FN);
@@ -251,7 +307,7 @@ int emulate() {
 	  case 0x35: 
 	  			{
 					uint16_t address = (vm->r[H] << 8) | vm->r[L];
-					(vm->memory[address] & 0x0F) ? FLAG_CLEAR(FH) : FLAG_SET(FH);	
+					(vm->memory[address] & 0x0F) ? FLAG_CLEAR(FH) : FLAG_SET(FH);
 					vm->memory[address]--;
 					(vm->memory[address] == 0) ? FLAG_SET(FZ) : FLAG_CLEAR(FZ);
 					FLAG_SET(FN);	
@@ -327,7 +383,7 @@ int emulate() {
 	  case 0x73: vm->memory[HL] = vm->r[E]; break;
 	  case 0x74: vm->memory[HL] = vm->r[H]; break;
 	  case 0x75: vm->memory[HL] = vm->r[L]; break;
-	  case 0x76: running = todo_implement(); break;
+	  case 0x76: todo_implement(); break;
 	  case 0x77: vm->memory[HL] = vm->r[A]; break;
 	  case 0x78: vm->r[A] = vm->r[B]; break;
 	  case 0x79: vm->r[A] = vm->r[C]; break;
@@ -337,14 +393,14 @@ int emulate() {
 	  case 0x7D: vm->r[A] = vm->r[L]; break;
 	  case 0x7E: vm->r[A] = vm->memory[HL]; break;
 	  case 0x7F: vm->r[A] = vm->r[A]; break;
-	  case 0x80: todo_implement(); break;
-	  case 0x81: todo_implement(); break;
-	  case 0x82: todo_implement(); break;
-	  case 0x83: todo_implement(); break;
-	  case 0x84: todo_implement(); break;
-	  case 0x85: todo_implement(); break;
-	  case 0x86: todo_implement(); break;
-	  case 0x87: todo_implement(); break;
+	  case 0x80: add(vm->r[B]); break;
+	  case 0x81: add(vm->r[C]); break;
+	  case 0x82: add(vm->r[D]); break;
+	  case 0x83: add(vm->r[E]); break;
+	  case 0x84: add(vm->r[H]); break;
+	  case 0x85: add(vm->r[L]); break;
+	  case 0x86: add(vm->memory[HL]); break;
+	  case 0x87: add(vm->r[A]); break;
 	  case 0x88: todo_implement(); break;
 	  case 0x89: todo_implement(); break;
 	  case 0x8A: todo_implement(); break;
@@ -353,14 +409,14 @@ int emulate() {
 	  case 0x8D: todo_implement(); break;
 	  case 0x8E: todo_implement(); break;
 	  case 0x8F: todo_implement(); break;
-	  case 0x90: todo_implement(); break;
-	  case 0x91: todo_implement(); break;
-	  case 0x92: todo_implement(); break;
-	  case 0x93: todo_implement(); break;
-	  case 0x94: todo_implement(); break;
-	  case 0x95: todo_implement(); break;
-	  case 0x96: todo_implement(); break;
-	  case 0x97: todo_implement(); break;
+	  case 0x90: sub(vm->r[B]); break;
+	  case 0x91: sub(vm->r[C]); break;
+	  case 0x92: sub(vm->r[D]); break;
+	  case 0x93: sub(vm->r[E]); break;
+	  case 0x94: sub(vm->r[H]); break;
+	  case 0x95: sub(vm->r[L]); break;
+	  case 0x96: sub(vm->memory[HL]); break;
+	  case 0x97: sub(vm->r[A]); break;
 	  case 0x98: todo_implement(); break;
 	  case 0x99: todo_implement(); break;
 	  case 0x9A: todo_implement(); break;
@@ -375,12 +431,7 @@ int emulate() {
 	  case 0xA3: and(vm->r[E]); break;
 	  case 0xA4: and(vm->r[H]); break;
 	  case 0xA5: and(vm->r[L]); break;
-	  case 0xA6: 
-				{
-		  			uint16_t address = (vm->r[H] << 8) | vm->r[L];
-		  			and(vm->memory[address]);
-  				}
- 				break;
+	  case 0xA6: and(vm->memory[HL]); break;
 	  case 0xA7: and(vm->r[A]); break;
 	  case 0xA8: xor(vm->r[B]); break;
 	  case 0xA9: xor(vm->r[C]); break;
@@ -388,12 +439,7 @@ int emulate() {
 	  case 0xAB: xor(vm->r[E]); break;
 	  case 0xAC: xor(vm->r[H]); break;
 	  case 0xAD: xor(vm->r[L]); break;
-	  case 0xAE: 
-				{
-		  			uint16_t address = (vm->r[H] << 8) | vm->r[L];
-		  			xor(vm->memory[address]);
-  				}
- 				break;
+	  case 0xAE: xor(vm->memory[HL]); break;
 	  case 0xAF: xor(vm->r[A]); break;
 	  case 0xB0: or(vm->r[B]); break;
 	  case 0xB1: or(vm->r[C]); break;
@@ -401,20 +447,15 @@ int emulate() {
 	  case 0xB3: or(vm->r[E]); break;
 	  case 0xB4: or(vm->r[H]); break;
 	  case 0xB5: or(vm->r[L]); break;
-	  case 0xB6: 
-	  			{
-		  		  	uint16_t address = (vm->r[H] << 8) | vm->r[L];
-		  		  	or(vm->memory[address]);
-	  		  	}
-	   		 	break;
+	  case 0xB6: or(vm->memory[HL]); break;
 	  case 0xB7: or(vm->r[A]); break;
-	  case 0xB8: todo_implement(); break;
-	  case 0xB9: todo_implement(); break;
-	  case 0xBA: todo_implement(); break;
-	  case 0xBB: todo_implement(); break;
-	  case 0xBC: todo_implement(); break;
-	  case 0xBD: todo_implement(); break;
-	  case 0xBE: todo_implement(); break;
+	  case 0xB8: cp(vm->r[B]); break;
+	  case 0xB9: cp(vm->r[C]); break;
+	  case 0xBA: cp(vm->r[D]); break;
+	  case 0xBB: cp(vm->r[E]); break;
+	  case 0xBC: cp(vm->r[H]); break;
+	  case 0xBD: cp(vm->r[L]); break;
+	  case 0xBE: cp(vm->memory[HL]); break;
 	  case 0xBF: todo_implement(); break;
 	  case 0xC0: todo_implement(); break;
 	  case 0xC1:
@@ -438,7 +479,7 @@ int emulate() {
 	  		  	vm->sp--;
 	  		  	vm->memory[vm->sp] = vm->r[C];
 	  			break;
-	  case 0xC6: todo_implement(); break;
+	  case 0xC6: add(fetch()); break;
 	  case 0xC7: todo_implement(); break;
 	  case 0xC8: todo_implement(); break;
 	  case 0xC9:
@@ -464,15 +505,15 @@ int emulate() {
 	  case 0xD0: todo_implement(); break;
 	  case 0xD1: todo_implement(); break;
 	  case 0xD2: todo_implement(); break;
-	  case 0xD3: todo_implement(); break;
+	  case 0xD3: break; // not defined
 	  case 0xD4: todo_implement(); break;
 	  case 0xD5: todo_implement(); break;
-	  case 0xD6: todo_implement(); break;
+	  case 0xD6: sub(fetch()); break;
 	  case 0xD7: todo_implement(); break;
 	  case 0xD8: todo_implement(); break;
 	  case 0xD9: todo_implement(); break;
 	  case 0xDA: todo_implement(); break;
-	  case 0xDB: todo_implement(); break;
+	  case 0xDB: break; // not defined
 	  case 0xDC: todo_implement(); break;
 	  case 0xDD: todo_implement(); break;
 	  case 0xDE: todo_implement(); break;
@@ -493,8 +534,8 @@ int emulate() {
 					printf("[0x%04x]: 0x%02x\n", address, vm->memory[address]);
 	  		    }
 				break;
-	  case 0xE3: todo_implement(); break;
-	  case 0xE4: todo_implement(); break;
+	  case 0xE3: break; // not defined
+	  case 0xE4: break; // not defined
 	  case 0xE5: todo_implement(); break;
 	  case 0xE6: and(fetch()); break;
 	  case 0xE7: todo_implement(); break;
@@ -507,9 +548,9 @@ int emulate() {
 					printf("[0x%04x]: 0x%02x\n", address, vm->memory[address]);
 				}
 				break;
-	  case 0xEB: todo_implement(); break;
-	  case 0xEC: todo_implement(); break;
-	  case 0xED: todo_implement(); break;
+	  case 0xEB: break; // not defined
+	  case 0xEC: break; // not defined
+	  case 0xED: break; // not defined
 	  case 0xEE: xor(fetch()); break;
 	  case 0xEF: todo_implement(); break;
 	  case 0xF0: todo_implement(); break;
@@ -523,7 +564,7 @@ int emulate() {
 	  case 0xF1: todo_implement(); break;
 	  case 0xF2: todo_implement(); break;
 	  case 0xF3: todo_implement(); break;
-	  case 0xF4: todo_implement(); break;
+	  case 0xF4: break; // not defined
 	  case 0xF5: todo_implement(); break;
 	  case 0xF6: or(fetch()); break;
 	  case 0xF7: todo_implement(); break;
@@ -536,22 +577,13 @@ int emulate() {
 				}
 				break;
 	  case 0xFB: todo_implement(); break;
-	  case 0xFC: todo_implement(); break;
-	  case 0xFD: todo_implement(); break;
-	  case 0xFE:  
-	  			{
-		  		  	uint8_t value = fetch();
-		  		  	uint8_t res = vm->r[A] - value;
-		  		  	res == 0 ? FLAG_SET(FZ) : FLAG_CLEAR(FZ);
-		  		  	vm->r[A] < res ? FLAG_SET(FC) : FLAG_CLEAR(FC);
-		  		  	(MASK8(vm->r[A]) - MASK8(value)) < 0 ? FLAG_SET(FH) : FLAG_CLEAR(FH);
-		  		  	FLAG_SET(FN);
-	  		  	}
-	  		  	break;
+	  case 0xFC: break; // not defined
+	  case 0xFD: break; // not defined
+	  case 0xFE: cp(fetch()); break;
 	  case 0xFF: todo_implement(); break;   
   	}
 
-  	return running;
+  	return cycles;
 }
 
 void init_vm() {	
