@@ -1,8 +1,6 @@
 #include <string.h>
 #include "gbe.h"
 
-#define MASK8(x) (x & 0xF)
-
 Vm *vm;
 
 const char *byte_to_binary(int x) {
@@ -245,7 +243,7 @@ int emulate() {
 				break;
 	  case 0x22: 
 				{
-					uint16_t address = (vm->r[H] << 8) | vm->r[L];
+					uint16_t address = HL;
 	 				vm->memory[address] = vm->r[A];
 	 			   	address++;
 	 			  	vm->r[H] = address >> 8;
@@ -287,7 +285,7 @@ int emulate() {
 				}
 	  case 0x32: 
 	  			{
-	  				uint16_t address = (vm->r[H] << 8) | vm->r[L];
+	  				uint16_t address = HL;
 				 	vm->memory[address] = vm->r[A];
 				 	address--;
 				 	vm->r[H] = address >> 8;
@@ -297,7 +295,7 @@ int emulate() {
 	  case 0x33: vm->sp++; break;
 	  case 0x34: 
 	  			{
-					uint16_t address = (vm->r[H] << 8) | vm->r[L];
+					uint16_t address = HL;
 					((vm->memory[address] & 0x0F) == 0x0F) ? FLAG_SET(FH) : FLAG_CLEAR(FH);
 	  	  		  	vm->memory[address]++;
 					(vm->memory[address] == 0) ? FLAG_SET(FZ) : FLAG_CLEAR(FZ);
@@ -306,7 +304,7 @@ int emulate() {
 	  		  	break;  
 	  case 0x35: 
 	  			{
-					uint16_t address = (vm->r[H] << 8) | vm->r[L];
+					uint16_t address = HL;
 					(vm->memory[address] & 0x0F) ? FLAG_CLEAR(FH) : FLAG_SET(FH);
 					vm->memory[address]--;
 					(vm->memory[address] == 0) ? FLAG_SET(FZ) : FLAG_CLEAR(FZ);
@@ -523,7 +521,6 @@ int emulate() {
 					int8_t offset = (int8_t)fetch();
 					uint16_t address = 0xFF00 + offset;
 					vm->memory[address] = vm->r[A];
-					printf("[0x%04x]: 0x%02x\n", address, vm->memory[address]);
     			}
 				break;
 	  case 0xE1: todo_implement(); break;
@@ -531,7 +528,6 @@ int emulate() {
 	  			{
 					uint16_t address = 0xFF00 + vm->r[C];
 		  			vm->memory[address] = vm->r[A];	
-					printf("[0x%04x]: 0x%02x\n", address, vm->memory[address]);
 	  		    }
 				break;
 	  case 0xE3: break; // not defined
@@ -545,7 +541,6 @@ int emulate() {
 	  			{
 					uint16_t address = (fetch() << 8) | fetch();
 	  		  		vm->memory[address] = vm->r[A];
-					printf("[0x%04x]: 0x%02x\n", address, vm->memory[address]);
 				}
 				break;
 	  case 0xEB: break; // not defined
@@ -558,7 +553,6 @@ int emulate() {
 					uint8_t offset = fetch();
 					uint16_t address = 0xFF00 + offset;
 					vm->r[A] = vm->memory[address];
-					printf("a: 0x%02x\n", vm->r[A]);
 				}
 	  			break;
 	  case 0xF1: todo_implement(); break;
@@ -580,13 +574,13 @@ int emulate() {
 	  case 0xFC: break; // not defined
 	  case 0xFD: break; // not defined
 	  case 0xFE: cp(fetch()); break;
-	  case 0xFF: todo_implement(); break;   
+	  case 0xFF: todo_implement(); break;
   	}
 
   	return cycles;
 }
 
-void init_vm() {	
+void init_vm() {
     vm = (Vm *)malloc(sizeof(Vm));
     if (vm == NULL) {
 		printf("Could not initialize VM\n");

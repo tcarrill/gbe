@@ -1,8 +1,4 @@
-#include <stdio.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <string.h>
-#include "gbe.h"
+#include "test.h"
 
 int assert(int expected, int actual) {
   int success = 0;
@@ -140,6 +136,7 @@ int test_add_overflow() {
 		emulate();
 		
 		assert(1, FLAG_CHECK(FC));
+		assert(1, FLAG_CHECK(FH));
 		assert(expected, vm->r[A]);
 	}
 	
@@ -182,6 +179,7 @@ int main(int argc, char *argv[]) {
   test_dec();
   test_add();
   test_add_overflow();
+  print_registers();
   /*
   printf("\n");
   reset_vm();
