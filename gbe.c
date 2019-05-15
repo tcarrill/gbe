@@ -327,7 +327,7 @@ int emulate() {
 	  			FLAG_FLIP(FC); 
 				FLAG_CLEAR(FN | FH);
 				break;
-	  case 0x40: vm->r[B] = vm->r[B]; break;
+	  case 0x40: break;
 	  case 0x41: vm->r[B] = vm->r[C]; break;
 	  case 0x42: vm->r[B] = vm->r[D]; break;
 	  case 0x43: vm->r[B] = vm->r[E]; break;
@@ -336,7 +336,7 @@ int emulate() {
 	  case 0x46: vm->r[B] = vm->memory[HL]; break;
 	  case 0x47: vm->r[B] = vm->r[A]; break;
 	  case 0x48: vm->r[C] = vm->r[B]; break;
-	  case 0x49: vm->r[C] = vm->r[C]; break;
+	  case 0x49: break;
 	  case 0x4A: vm->r[C] = vm->r[D]; break;
 	  case 0x4B: vm->r[C] = vm->r[E]; break;
 	  case 0x4C: vm->r[C] = vm->r[H]; break;
@@ -345,7 +345,7 @@ int emulate() {
 	  case 0x4F: vm->r[C] = vm->r[A]; break;
 	  case 0x50: vm->r[D] = vm->r[B]; break;
 	  case 0x51: vm->r[D] = vm->r[C]; break;
-	  case 0x52: vm->r[D] = vm->r[D]; break;
+	  case 0x52: break;
 	  case 0x53: vm->r[D] = vm->r[E]; break;
 	  case 0x54: vm->r[D] = vm->r[H]; break;
 	  case 0x55: vm->r[D] = vm->r[L]; break;
@@ -354,7 +354,7 @@ int emulate() {
 	  case 0x58: vm->r[E] = vm->r[B]; break;
 	  case 0x59: vm->r[E] = vm->r[C]; break;
 	  case 0x5A: vm->r[E] = vm->r[D]; break;
-	  case 0x5B: vm->r[E] = vm->r[E]; break;
+	  case 0x5B: break;
 	  case 0x5C: vm->r[E] = vm->r[H]; break;
 	  case 0x5D: vm->r[E] = vm->r[L]; break;
 	  case 0x5E: vm->r[E] = vm->memory[HL]; break;
@@ -363,7 +363,7 @@ int emulate() {
 	  case 0x61: vm->r[H] = vm->r[C]; break;
 	  case 0x62: vm->r[H] = vm->r[D]; break;
 	  case 0x63: vm->r[H] = vm->r[E]; break;
-	  case 0x64: vm->r[H] = vm->r[H]; break;
+	  case 0x64: break;
 	  case 0x65: vm->r[H] = vm->r[L]; break;
 	  case 0x66: vm->r[H] = vm->memory[HL]; break;
 	  case 0x67: vm->r[H] = vm->r[A]; break;
@@ -372,7 +372,7 @@ int emulate() {
 	  case 0x6A: vm->r[L] = vm->r[D]; break;
 	  case 0x6B: vm->r[L] = vm->r[E]; break;
 	  case 0x6C: vm->r[L] = vm->r[H]; break;
-	  case 0x6D: vm->r[L] = vm->r[L]; break;
+	  case 0x6D: break;
 	  case 0x6E: vm->r[L] = vm->memory[HL]; break;
 	  case 0x6F: vm->r[L] = vm->r[A]; break;
 	  case 0x70: vm->memory[HL] = vm->r[B]; break;
@@ -390,7 +390,7 @@ int emulate() {
 	  case 0x7C: vm->r[A] = vm->r[H]; break;
 	  case 0x7D: vm->r[A] = vm->r[L]; break;
 	  case 0x7E: vm->r[A] = vm->memory[HL]; break;
-	  case 0x7F: vm->r[A] = vm->r[A]; break;
+	  case 0x7F: break;
 	  case 0x80: add(vm->r[B]); break;
 	  case 0x81: add(vm->r[C]); break;
 	  case 0x82: add(vm->r[D]); break;
