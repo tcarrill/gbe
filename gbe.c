@@ -116,7 +116,7 @@ Flags affected:
 */
 void add(uint8_t value) {
 	unsigned int result = vm->r[A] + value; // do math at higher precision to detect overflows
-	result == 0 ? FLAG_SET(FZ) : FLAG_CLEAR(FZ);
+	result = 0 ? FLAG_SET(FZ) : FLAG_CLEAR(FZ);
 	(result & 0xFF00) ? FLAG_SET(FC) : FLAG_CLEAR(FC);
 	
 	vm->r[A] = result & 0xFF;
@@ -124,6 +124,25 @@ void add(uint8_t value) {
 	if (((vm->r[A] & 0x0F) + (value & 0x0F)) > 0x0F) FLAG_SET(FH);
 	else FLAG_CLEAR(FH);
 	FLAG_CLEAR(FN);
+}
+
+/*
+Flags affected:
+ Z - Not affected.
+ N - Reset.
+ H - Set if carry from bit 11.
+ C - Set if carry from bit 15.
+*/
+void add16(uint16_t value) {
+        unsigned long result = HL + value; // do math at higher precision to detect overflows
+        (result & 0xFFFF0000) ? FLAG_SET(FC) : FLAG_CLEAR(FC);
+
+        vm->r[H] = result >> 8;
+	vm->r[L] = result & 0xFF;
+	
+        if (((HL & 0x0F) + (value & 0x0F)) > 0x0F) FLAG_SET(FH);
+        else FLAG_CLEAR(FH);
+        FLAG_CLEAR(FN);
 }
 
 /*
@@ -185,7 +204,7 @@ int emulate() {
 		  		  	vm->memory[address] = vm->sp;	
 				}
 				break;
-	  case 0x09: todo_implement(); break;
+	  case 0x09: add16(BC);; break;
 	  case 0x0A: vm->r[A] = vm->memory[BC]; break;
 	  case 0x0B: dec16(B, C); break;
 	  case 0x0C: inc(C); break;
@@ -220,7 +239,7 @@ int emulate() {
 					vm->pc += offset;
 				}
 	  			break;
-	  case 0x19: todo_implement(); break;
+	  case 0x19: add16(DE); break;
 	  case 0x1A: vm->r[A] = vm->memory[DE]; break;
 	  case 0x1B: dec16(D, E); break;
 	  case 0x1C: inc(E); break;
@@ -265,7 +284,7 @@ int emulate() {
 					}
 				}
 	  			break;
-	  case 0x29: todo_implement(); break;
+	  case 0x29: add16(HL); break;
 	  case 0x2A: todo_implement(); break;
 	  case 0x2B: dec16(H, L); break;
 	  case 0x2C: inc(L); break;
@@ -335,7 +354,7 @@ int emulate() {
 					}
 				}
 				break;
-	  case 0x39: todo_implement(); break;
+	  case 0x39: add16(vm->sp); break;
 	  case 0x3A: todo_implement(); break;
 	  case 0x3B: vm->sp--; break;
 	  case 0x3C: inc(A); break;
