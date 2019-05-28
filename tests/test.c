@@ -4,8 +4,8 @@ int assert(int expected, int actual) {
   int success = 0;
 
   if (expected != actual) {
-    printf("\t-FAIL: Got %d, expected %d\n", actual, expected);
-    success = 0;
+    printf("\t-FAIL: actual %d, expected %d\n", actual, expected);
+    success = -1;
   } else {
     printf("\t+PASS\n");
     success = 1;
@@ -33,7 +33,10 @@ int test_in16c() {
   uint8_t opcodes[]   = { 0x03, 0x13, 0x23, 0x33 };
   uint8_t registers[] = { B,C,  D,E,  H,L };
   int length = sizeof(opcodes) / sizeof(opcodes[0]);
-
+  
+  int failed = 0;
+  int passed = 0;
+  
   for (int i = 0; i < length; i++) {
     printf("0x%02x", opcodes[i]);
     reset_vm();
@@ -42,8 +45,9 @@ int test_in16c() {
     vm->r[registers[i + 1]] = 1;
     emulate();
 
-    assert(2, vm->r[registers[i]]);
+    assert(2, vm->r[registers[i]]) ? passed++ : failed++;
   }
+  printf("Passed: %d\tFailed: %d\n", passed, failed);
 
   return 0;
 }
@@ -54,6 +58,9 @@ int test_inc() {
   uint8_t registers[] = { A,    B,    C,    D,    E,    H,    L };
   int length = sizeof(opcodes) / sizeof(opcodes[0]);
 
+  int failed = 0;
+  int passed = 0;
+
   for (int i = 0; i < length; i++) {
     printf("0x%02x", opcodes[i]);
     reset_vm();
@@ -62,9 +69,10 @@ int test_inc() {
     vm->r[registers[i]] = 1;
     emulate();
 
-    assert(2, vm->r[registers[i]]);
+    assert(2, vm->r[registers[i]]) ? passed++ : failed++;
   }
-
+  printf("Passed: %d\tFailed: %d\n", passed, failed);
+  
   return 0;
 }
 
@@ -74,6 +82,9 @@ int test_dec() {
   uint8_t registers[] = { A,    B,    C,    D,    E,    H,    L };
   int length = sizeof(opcodes) / sizeof(opcodes[0]);
 
+  int failed = 0;
+  int passed = 0;
+
   for (int i = 0; i < length; i++) {
     printf("0x%02x", opcodes[i]);
     reset_vm();
@@ -82,8 +93,9 @@ int test_dec() {
     vm->r[registers[i]] = 1;
     emulate();
 
-    assert(0, vm->r[registers[i]]);
+    assert(0, vm->r[registers[i]]) ? passed++ : failed++;
   }
+  printf("Passed: %d\tFailed: %d\n", passed, failed);
 
   return 0;
 }
@@ -100,6 +112,9 @@ int test_add() {
 	uint8_t registers[] = { A,    B,    C,    D,    E,    H,    L };
 	int length = sizeof(opcodes) / sizeof(opcodes[0]);
 	
+    int failed = 0;
+    int passed = 0;
+	
 	for (int i = 0; i < length; i++) {
 		printf("0x%02x", opcodes[i]);
 		reset_vm();
@@ -110,8 +125,9 @@ int test_add() {
 		uint8_t expected = vm->r[A] + vm->r[registers[i]];
 		emulate();
 		
-		assert(expected, vm->r[A]);
+		assert(expected, vm->r[A]) ? passed++ : failed++;
 	}
+	printf("Passed: %d\tFailed: %d\n", passed, failed);
 	
 	return 0;
 }
@@ -121,6 +137,9 @@ int test_add_overflow() {
 	uint8_t opcodes[]   = { 0x87, 0x80, 0x81, 0x82, 0x83, 0x84, 0x85 };
 	uint8_t registers[] = { A,    B,    C,    D,    E,    H,    L };
 	int length = sizeof(opcodes) / sizeof(opcodes[0]);
+	
+    int failed = 0;
+    int passed = 0;
 	
 	for (int i = 0; i < length; i++) {
 		printf("0x%02x", opcodes[i]);
@@ -135,10 +154,14 @@ int test_add_overflow() {
 		uint8_t expected = vm->r[A] + vm->r[registers[i]];
 		emulate();
 		
-		assert(1, FLAG_CHECK(FC));
-		assert(1, FLAG_CHECK(FH));
-		assert(expected, vm->r[A]);
+		int result = 0;
+		result += assert(1, FLAG_CHECK(FC));
+		result += assert(1, FLAG_CHECK(FH));
+		result += assert(expected, vm->r[A]);
+		
+		result > 0 ? passed++ : failed++;
 	}
+	printf("Passed: %d\tFailed: %d\n", passed, failed);
 	
 	return 0;
 }
@@ -148,6 +171,9 @@ int test_sub() {
 	uint8_t opcodes[]   = { 0x87, 0x80, 0x81, 0x82, 0x83, 0x84, 0x85 };
 	uint8_t registers[] = { A,    B,    C,    D,    E,    H,    L };
 	int length = sizeof(opcodes) / sizeof(opcodes[0]);
+	
+    int failed = 0;
+    int passed = 0;
 	
 	for (int i = 0; i < length; i++) {
 		printf("0x%02x", opcodes[i]);
@@ -159,8 +185,9 @@ int test_sub() {
 		uint8_t expected = vm->r[A] + vm->r[registers[i]];
 		emulate();
 		
-		assert(expected, vm->r[A]);
+		assert(expected, vm->r[A]) ? passed++ : failed++;
 	}
+	printf("Passed: %d\tFailed: %d\n", passed, failed);
 	
 	return 0;
 }
@@ -178,8 +205,8 @@ int main(int argc, char *argv[]) {
   test_inc();
   test_dec();
   test_add();
+  test_ld_a();
   test_add_overflow();
-  print_registers();
   /*
   printf("\n");
   reset_vm();
